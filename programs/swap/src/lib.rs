@@ -31,4 +31,8 @@ pub mod swap {
     pub fn take_offer(ctx: Context<TakeOffer>, offer_id: u64) -> Result<()> {
         instructions::take_offer::handle_take_offer(ctx, offer_id)
     }
+
+    pub fn cancel_offer(ctx: Context<CancelOffer>, offer_id: u64) -> Result<()> {
+        instructions::cancel_offer::handle_cancel_offer(ctx, offer_id)
+    }
 }

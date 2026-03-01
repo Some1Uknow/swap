@@ -14,4 +14,6 @@ pub enum ErrorCode {
     OfferNotOpen,
     #[msg("Provided mint account does not match offer state")]
     MintMismatch,
+    #[msg("Only the maker can perform this action")]
+    MakerMismatch,
 }
