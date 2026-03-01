@@ -14,6 +14,8 @@ import {
 
 describe("swap", () => {
   const INITIAL_MAKER_MINT_AMOUNT = 5_000_000;
+  const OFFER_AMOUNT_GIVES = new anchor.BN(1_000_000);
+  const OFFER_AMOUNT_WANTS = new anchor.BN(2_000_000);
 
   anchor.setProvider(anchor.AnchorProvider.env());
 
@@ -130,11 +132,8 @@ describe("swap", () => {
   });
 
   it("make_offer", async () => {
-    const amountMakerGives = new anchor.BN(1_000_000);
-    const amountMakerWants = new anchor.BN(2_000_000);
-
     const makeOfferTx = await program.methods
-      .makeOffer(offerId, amountMakerGives, amountMakerWants)
+      .makeOffer(offerId, OFFER_AMOUNT_GIVES, OFFER_AMOUNT_WANTS)
       .accountsPartial({
         maker: maker.publicKey,
         mintMakerGives,
@@ -162,23 +161,102 @@ describe("swap", () => {
       offer.mintMakerWants.toBase58(),
       mintMakerWants.toBase58(),
     );
-    assert.ok(offer.amountMakerGives.eq(amountMakerGives));
-    assert.ok(offer.amountMakerWants.eq(amountMakerWants));
+    assert.ok(offer.amountMakerGives.eq(OFFER_AMOUNT_GIVES));
+    assert.ok(offer.amountMakerWants.eq(OFFER_AMOUNT_WANTS));
 
     const vaultAtaInfo = await getAccount(connection, vaultAta);
     assert.strictEqual(
       vaultAtaInfo.amount.toString(),
-      amountMakerGives.toString(),
+      OFFER_AMOUNT_GIVES.toString(),
     );
 
     const makerAtaAfter = await getAccount(connection, makerAtaGives);
     const expectedMakerLeft = new anchor.BN(INITIAL_MAKER_MINT_AMOUNT).sub(
-      amountMakerGives,
+      OFFER_AMOUNT_GIVES,
     );
 
     assert.strictEqual(
       makerAtaAfter.amount.toString(),
       expectedMakerLeft.toString(),
     );
+  });
+
+  // take_offer
+
+  const taker = anchor.web3.Keypair.generate();
+
+  it("take_offer", async () => {
+    await airdropSol(taker.publicKey, 2);
+
+    const makerAtaWants = await getOrCreateAssociatedTokenAccount(
+      connection,
+      maker,
+      mintMakerWants,
+      maker.publicKey,
+    );
+
+    const takerAtaWants = await getOrCreateAssociatedTokenAccount(
+      connection,
+      taker,
+      mintMakerWants,
+      taker.publicKey,
+    );
+
+    const takerAtaGives = await getOrCreateAssociatedTokenAccount(
+      connection,
+      taker,
+      mintMakerGives,
+      taker.publicKey,
+    );
+
+    await mintTo(
+      connection,
+      maker,
+      mintMakerWants,
+      takerAtaWants.address,
+      maker,
+      OFFER_AMOUNT_WANTS.toNumber(),
+    );
+    const takeOfferTx = await program.methods
+      .takeOffer(offerId)
+      .accountsPartial({
+        taker: taker.publicKey,
+        maker: maker.publicKey,
+        mintMakerGives,
+        mintMakerWants,
+        makerAtaWants: makerAtaWants.address,
+        takerAtaWants: takerAtaWants.address,
+        takerAtaGives: takerAtaGives.address,
+        vault: vaultAta,
+        offer: offerPda,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      })
+      .signers([taker])
+      .rpc();
+
+    console.log("take_offer transaction signature:", takeOfferTx);
+
+    const offer = await program.account.offer.fetch(offerPda);
+    assert.strictEqual(offer.status, 1);
+    assert.strictEqual(offer.maker.toBase58(), maker.publicKey.toBase58());
+    assert.strictEqual(
+      offer.mintMakerGives.toBase58(),
+      mintMakerGives.toBase58(),
+    );
+    assert.strictEqual(
+      offer.mintMakerWants.toBase58(),
+      mintMakerWants.toBase58(),
+    );
+    assert.ok(offer.amountMakerGives.eq(OFFER_AMOUNT_GIVES));
+    assert.ok(offer.amountMakerWants.eq(OFFER_AMOUNT_WANTS));
+
+    const vaultAtaInfo = await getAccount(connection, vaultAta);
+    assert.strictEqual(vaultAtaInfo.amount.toString(), "0");
+
+    const takerAtaWantsInfo = await getAccount(
+      connection,
+      takerAtaWants.address,
+    );
+    assert.strictEqual(takerAtaWantsInfo.amount.toString(), "0");
   });
 });
