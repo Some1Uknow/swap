@@ -1,5 +1,7 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, TransferChecked};
+use anchor_spl::token_interface::{
+    self, CloseAccount, Mint, TokenAccount, TokenInterface, TransferChecked,
+};
 
 use crate::error::ErrorCode;
 use crate::state::{Offer, OfferStatus};
@@ -132,6 +134,18 @@ pub fn handle_take_offer(ctx: Context<TakeOffer>, offer_id: u64) -> Result<()> {
 
     ctx.accounts.offer.taker = Some(ctx.accounts.taker.key());
     ctx.accounts.offer.status = OfferStatus::Filled as u8;
+
+    let close_vault = CloseAccount {
+        account: ctx.accounts.vault.to_account_info(),
+        destination: ctx.accounts.maker.to_account_info(),
+        authority: ctx.accounts.offer.to_account_info(),
+    };
+    let close_ctx = CpiContext::new_with_signer(
+        ctx.accounts.token_program.to_account_info(),
+        close_vault,
+        &binding,
+    );
+    token_interface::close_account(close_ctx)?;
 
     Ok(())
 }
