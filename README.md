@@ -1,6 +1,6 @@
-# Escrow Swap (Handwritten)
+# Anchor Escrow
 
-Fully featured Solana escrow swap built with Anchor.
+Production-minded Solana escrow built with Anchor.
 
 This repo is a fixed-price token escrow.
 
@@ -74,25 +74,25 @@ flowchart LR
 
 Program:
 
-- Anchor program in [`programs/swap/src/lib.rs`](/Users/raghavsharma/Documents/swap/programs/swap/src/lib.rs)
+- Anchor program in [`programs/swap/src/lib.rs`](programs/swap/src/lib.rs)
 
 Instructions:
 
-- [`make_offer.rs`](/Users/raghavsharma/Documents/swap/programs/swap/src/instructions/make_offer.rs)
-- [`take_offer.rs`](/Users/raghavsharma/Documents/swap/programs/swap/src/instructions/take_offer.rs)
-- [`cancel_offer.rs`](/Users/raghavsharma/Documents/swap/programs/swap/src/instructions/cancel_offer.rs)
+- [`make_offer.rs`](programs/swap/src/instructions/make_offer.rs)
+- [`take_offer.rs`](programs/swap/src/instructions/take_offer.rs)
+- [`cancel_offer.rs`](programs/swap/src/instructions/cancel_offer.rs)
 
 State:
 
-- [`offer.rs`](/Users/raghavsharma/Documents/swap/programs/swap/src/state/offer.rs)
+- [`offer.rs`](programs/swap/src/state/offer.rs)
 
 Errors:
 
-- [`error.rs`](/Users/raghavsharma/Documents/swap/programs/swap/src/error.rs)
+- [`error.rs`](programs/swap/src/error.rs)
 
 Events:
 
-- [`events.rs`](/Users/raghavsharma/Documents/swap/programs/swap/src/events.rs)
+- [`events.rs`](programs/swap/src/events.rs)
 
 ## Security and Invariants
 
@@ -173,9 +173,9 @@ Covered flows:
 
 Files:
 
-- [`tests/litesvm/make-offer.spec.ts`](/Users/raghavsharma/Documents/swap/tests/litesvm/make-offer.spec.ts)
-- [`tests/litesvm/take-offer.spec.ts`](/Users/raghavsharma/Documents/swap/tests/litesvm/take-offer.spec.ts)
-- [`tests/litesvm/cancel-offer.spec.ts`](/Users/raghavsharma/Documents/swap/tests/litesvm/cancel-offer.spec.ts)
+- [`tests/litesvm/make-offer.spec.ts`](tests/litesvm/make-offer.spec.ts)
+- [`tests/litesvm/take-offer.spec.ts`](tests/litesvm/take-offer.spec.ts)
+- [`tests/litesvm/cancel-offer.spec.ts`](tests/litesvm/cancel-offer.spec.ts)
 
 ### Mollusk
 
@@ -195,9 +195,9 @@ Covered flows:
 
 Files:
 
-- [`programs/swap/tests/make_offer.rs`](/Users/raghavsharma/Documents/swap/programs/swap/tests/make_offer.rs)
-- [`programs/swap/tests/take_offer.rs`](/Users/raghavsharma/Documents/swap/programs/swap/tests/take_offer.rs)
-- [`programs/swap/tests/cancel_offer.rs`](/Users/raghavsharma/Documents/swap/programs/swap/tests/cancel_offer.rs)
+- [`programs/swap/tests/make_offer.rs`](programs/swap/tests/make_offer.rs)
+- [`programs/swap/tests/take_offer.rs`](programs/swap/tests/take_offer.rs)
+- [`programs/swap/tests/cancel_offer.rs`](programs/swap/tests/cancel_offer.rs)
 
 ### Current Local Verification Result
 
@@ -206,6 +206,49 @@ Latest local run of `pnpm run verify:solana`:
 - LiteSVM: `15 passing`
 - Mollusk: `6 passing`
 - CU bench: passed
+
+Terminal output:
+
+```text
+> pnpm run verify:solana
+
+  cancel_offer (litesvm)
+    ✔ refunds the maker and closes escrow accounts
+    ✔ fails for a non-maker
+    ✔ fails after the offer was already cancelled
+    ✔ prevents taking an offer after it was cancelled
+
+  make_offer (litesvm)
+    ✔ stores offer state and moves funds into the vault
+    ✔ fails with zero give amount
+    ✔ fails with zero want amount
+    ✔ fails when give and want mint are the same
+    ✔ fails when maker does not have enough tokens
+    ✔ fails when the same offer id is reused by the same maker
+
+  take_offer (litesvm)
+    ✔ settles the trade and closes escrow accounts
+    ✔ fails when already filled
+    ✔ fails when maker tries to take their own offer
+    ✔ fails when taker passes the wrong wants mint
+    ✔ fails when taker does not have enough tokens and leaves offer intact
+
+  15 passing
+
+  running 6 Rust Mollusk tests
+  test cancel_offer_success_refunds_and_closes_escrow_accounts ... ok
+  test make_offer_success_moves_tokens_and_persists_offer ... ok
+  test make_offer_zero_amount_fails_without_state_changes ... ok
+  test make_offer_same_mint_fails_without_state_changes ... ok
+  test take_offer_success_settles_and_closes_escrow_accounts ... ok
+  test take_offer_rejects_self_take_without_mutating_escrow ... ok
+
+  test result: ok. 6 passed; 0 failed
+
+  make_offer: avg_cu=51039 avg_wall_time_us=392 iterations=25
+  take_offer: avg_cu=40028 avg_wall_time_us=305 iterations=25
+  cancel_offer: avg_cu=24178 avg_wall_time_us=214 iterations=25
+```
 
 ## Compute Unit Baselines
 
@@ -223,7 +266,7 @@ pnpm run bench:cu
 
 Bench target:
 
-- [`compute_units.rs`](/Users/raghavsharma/Documents/swap/programs/swap/benches/compute_units.rs)
+- [`compute_units.rs`](programs/swap/benches/compute_units.rs)
 
 Interpretation:
 
