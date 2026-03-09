@@ -1,6 +1,10 @@
 {
   "license": "ISC",
   "scripts": {
+    "build:program": "anchor build",
+    "test:mollusk": "cargo test -p swap --test make_offer --test take_offer --test cancel_offer",
+    "bench:cu": "RUST_LOG=off cargo bench -p swap --bench compute_units -- --nocapture",
+    "verify:solana": "pnpm run test:litesvm && pnpm run test:mollusk && pnpm run bench:cu",
     "test:litesvm": "ts-mocha -p ./tsconfig.json -t 1000000 \"tests/litesvm/**/*.ts\"",
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
     "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
