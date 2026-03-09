@@ -7,7 +7,6 @@ use crate::error::ErrorCode;
 pub enum OfferStatus {
     Open = 0,
     Filled = 1,
-    Cancelled = 2,
 }
 
 #[account]
@@ -25,15 +24,10 @@ pub struct Offer {
 }
 
 impl Offer {
-    pub fn zeroed() -> Self {
-        Self::default()
-    }
-
     pub fn status_enum(&self) -> Result<OfferStatus> {
         match self.status {
             0 => Ok(OfferStatus::Open),
             1 => Ok(OfferStatus::Filled),
-            2 => Ok(OfferStatus::Cancelled),
             _ => err!(ErrorCode::InvalidStatus),
         }
     }

@@ -4,6 +4,7 @@ use anchor_spl::token_interface::{
 };
 
 use crate::error::ErrorCode;
+use crate::events::OfferTaken;
 use crate::state::{Offer, OfferStatus};
 
 #[derive(Accounts)]
@@ -67,10 +68,7 @@ pub fn handle_take_offer(ctx: Context<TakeOffer>, offer_id: u64) -> Result<()> {
     let offer = &ctx.accounts.offer;
 
     require!(offer.id == offer_id, ErrorCode::OfferIdMismatch);
-    require!(
-        offer.status == OfferStatus::Open as u8,
-        ErrorCode::OfferNotOpen
-    );
+    require!(offer.status_enum()? == OfferStatus::Open, ErrorCode::OfferNotOpen);
     require_keys_eq!(
         offer.mint_maker_gives,
         ctx.accounts.mint_maker_gives.key(),
@@ -81,6 +79,7 @@ pub fn handle_take_offer(ctx: Context<TakeOffer>, offer_id: u64) -> Result<()> {
         ctx.accounts.mint_maker_wants.key(),
         ErrorCode::MintMismatch
     );
+    require_keys_eq!(offer.maker, ctx.accounts.maker.key(), ErrorCode::MakerMismatch);
     require_keys_neq!(
         ctx.accounts.maker.key(),
         ctx.accounts.taker.key(),
@@ -111,6 +110,8 @@ pub fn handle_take_offer(ctx: Context<TakeOffer>, offer_id: u64) -> Result<()> {
 
     let maker_key = ctx.accounts.maker.key();
     let offer_id_bytes = offer_id.to_le_bytes();
+    let amount_maker_gives = offer.amount_maker_gives;
+    let amount_maker_wants = offer.amount_maker_wants;
 
     let signer_seeds: &[&[u8]] = &[
         b"offer",
@@ -128,12 +129,24 @@ pub fn handle_take_offer(ctx: Context<TakeOffer>, offer_id: u64) -> Result<()> {
 
     token_interface::transfer_checked(
         cpi_ctx_taker,
-        offer.amount_maker_gives,
+        amount_maker_gives,
         ctx.accounts.mint_maker_gives.decimals,
     )?;
 
+    let offer_key = ctx.accounts.offer.key();
     ctx.accounts.offer.taker = Some(ctx.accounts.taker.key());
     ctx.accounts.offer.status = OfferStatus::Filled as u8;
+
+    emit!(OfferTaken {
+        offer: offer_key,
+        offer_id,
+        maker: ctx.accounts.maker.key(),
+        taker: ctx.accounts.taker.key(),
+        mint_maker_gives: ctx.accounts.mint_maker_gives.key(),
+        mint_maker_wants: ctx.accounts.mint_maker_wants.key(),
+        amount_maker_gives,
+        amount_maker_wants,
+    });
 
     let close_vault = CloseAccount {
         account: ctx.accounts.vault.to_account_info(),
@@ -146,6 +159,7 @@ pub fn handle_take_offer(ctx: Context<TakeOffer>, offer_id: u64) -> Result<()> {
         &binding,
     );
     token_interface::close_account(close_ctx)?;
+    ctx.accounts.offer.close(ctx.accounts.maker.to_account_info())?;
 
     Ok(())
 }

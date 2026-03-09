@@ -6,6 +6,7 @@ use anchor_spl::{
 
 use crate::constants::ANCHOR_DISCRIMINATOR_SIZE;
 use crate::error::ErrorCode;
+use crate::events::OfferCreated;
 use crate::state::{Offer, OfferStatus};
 
 #[derive(Accounts)]
@@ -96,6 +97,17 @@ pub fn handle_make_offer(
         amount_maker_wants,
         status: OfferStatus::Open as u8,
         bump: ctx.bumps.offer,
+    });
+
+    emit!(OfferCreated {
+        offer: ctx.accounts.offer.key(),
+        offer_id,
+        maker: ctx.accounts.maker.key(),
+        mint_maker_gives: ctx.accounts.mint_maker_gives.key(),
+        mint_maker_wants: ctx.accounts.mint_maker_wants.key(),
+        amount_maker_gives,
+        amount_maker_wants,
+        vault: ctx.accounts.vault.key(),
     });
 
     Ok(())

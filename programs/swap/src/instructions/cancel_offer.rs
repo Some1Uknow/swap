@@ -4,6 +4,7 @@ use anchor_spl::token_interface::{
 };
 
 use crate::error::ErrorCode;
+use crate::events::OfferCancelled;
 use crate::state::{Offer, OfferStatus};
 
 #[derive(Accounts)]
@@ -46,10 +47,7 @@ pub fn handle_cancel_offer(ctx: Context<CancelOffer>, offer_id: u64) -> Result<(
     let offer = &ctx.accounts.offer;
 
     require!(offer.id == offer_id, ErrorCode::OfferIdMismatch);
-    require!(
-        offer.status == OfferStatus::Open as u8,
-        ErrorCode::OfferNotOpen
-    );
+    require!(offer.status_enum()? == OfferStatus::Open, ErrorCode::OfferNotOpen);
     require_keys_eq!(offer.maker, ctx.accounts.maker.key(), ErrorCode::MakerMismatch);
     require_keys_eq!(
         offer.mint_maker_gives,
@@ -101,6 +99,14 @@ pub fn handle_cancel_offer(ctx: Context<CancelOffer>, offer_id: u64) -> Result<(
         &signer_binding,
     );
     token_interface::close_account(close_ctx)?;
+
+    emit!(OfferCancelled {
+        offer: ctx.accounts.offer.key(),
+        offer_id,
+        maker: ctx.accounts.maker.key(),
+        mint_maker_gives: ctx.accounts.mint_maker_gives.key(),
+        amount_maker_gives: refund_amount,
+    });
 
     Ok(())
 }
