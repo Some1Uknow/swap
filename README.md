@@ -152,24 +152,28 @@ Current LiteSVM suite: `15 passing`
 
 Covered flows:
 
-- `cancel_offer`
-  - refunds maker and closes escrow accounts
-  - fails for non-maker
-  - fails after already cancelled
-  - prevents take after cancel
-- `make_offer`
-  - stores offer state and moves funds into vault
-  - fails with zero give amount
-  - fails with zero want amount
-  - fails when give and want mint are the same
-  - fails when maker does not have enough tokens
-  - fails when same offer id is reused by same maker
-- `take_offer`
-  - settles trade and closes escrow accounts
-  - fails when already filled
-  - fails when maker tries to take own offer
-  - fails when wrong wants mint is passed
-  - fails when taker lacks enough tokens and leaves offer intact
+cancel_offer
+✔ refunds the maker and closes escrow accounts
+✔ fails for a non-maker
+✔ fails after the offer was already cancelled
+✔ prevents taking an offer after it was cancelled
+
+make_offer
+✔ stores offer state and moves funds into the vault
+✔ fails with zero give amount
+✔ fails with zero want amount
+✔ fails when give and want mint are the same
+✔ fails when maker does not have enough tokens
+✔ fails when the same offer id is reused by the same maker
+
+take_offer
+✔ settles the trade and closes escrow accounts
+✔ fails when already filled
+✔ fails when maker tries to take their own offer
+✔ fails when taker passes the wrong wants mint
+✔ fails when taker does not have enough tokens and leaves offer intact
+
+15 passing
 
 Files:
 
@@ -206,49 +210,6 @@ Latest local run of `pnpm run verify:solana`:
 - LiteSVM: `15 passing`
 - Mollusk: `6 passing`
 - CU bench: passed
-
-Terminal output:
-
-```text
-> pnpm run verify:solana
-
-  cancel_offer (litesvm)
-    ✔ refunds the maker and closes escrow accounts
-    ✔ fails for a non-maker
-    ✔ fails after the offer was already cancelled
-    ✔ prevents taking an offer after it was cancelled
-
-  make_offer (litesvm)
-    ✔ stores offer state and moves funds into the vault
-    ✔ fails with zero give amount
-    ✔ fails with zero want amount
-    ✔ fails when give and want mint are the same
-    ✔ fails when maker does not have enough tokens
-    ✔ fails when the same offer id is reused by the same maker
-
-  take_offer (litesvm)
-    ✔ settles the trade and closes escrow accounts
-    ✔ fails when already filled
-    ✔ fails when maker tries to take their own offer
-    ✔ fails when taker passes the wrong wants mint
-    ✔ fails when taker does not have enough tokens and leaves offer intact
-
-  15 passing
-
-  running 6 Rust Mollusk tests
-  test cancel_offer_success_refunds_and_closes_escrow_accounts ... ok
-  test make_offer_success_moves_tokens_and_persists_offer ... ok
-  test make_offer_zero_amount_fails_without_state_changes ... ok
-  test make_offer_same_mint_fails_without_state_changes ... ok
-  test take_offer_success_settles_and_closes_escrow_accounts ... ok
-  test take_offer_rejects_self_take_without_mutating_escrow ... ok
-
-  test result: ok. 6 passed; 0 failed
-
-  make_offer: avg_cu=51039 avg_wall_time_us=392 iterations=25
-  take_offer: avg_cu=40028 avg_wall_time_us=305 iterations=25
-  cancel_offer: avg_cu=24178 avg_wall_time_us=214 iterations=25
-```
 
 ## Compute Unit Baselines
 
